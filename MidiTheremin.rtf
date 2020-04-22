@@ -1,0 +1,452 @@
+{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fswiss\fcharset0 Arial;}{\f1\fswiss\fcharset0 Futura-Book;}{\f2\fnil\fcharset0 Arial;}{\f3\fnil\fcharset2 Symbol;}}
+{\*\generator Msftedit 5.41.15.1515;}\viewkind4\uc1\pard\lang2057\ul\b\f0\fs40 Step 0\par
+MIDI Sonar "Theremin"\ulnone\b0\fs20\par
+\par
+<Photo of completed unit>\par
+\par
+This is a musical instrument which uses two sonar distance sensors to control the pitch and quality of the notes. It's not really a Theremin of course but "Theremin" has become the generic term for instruments played by waving your hands around.\par
+\par
+It has a built-in MIDI synthesiser, amplifier and speakers. The musical notes are produced by a MIDI chip - the VS1053 - which has 127 voices (i.e. allegedly-different instruments). It has a high degree of polyphony (up to 64) so it can play single notes or chords.\par
+\par
+Your right hand controls the note being played. In "discrete" mode the space on the right is divided into "bins". As your hand enters a bin, the note for that bin starts. When you leave the bin, the note might stop (e.g. an organ) or die away naturally (e.g. a piano).\par
+\par
+In "continuous" mode the space on the right determines a continuously variable pitch - like the original Theremin. The note starts when your hand enters the space and stops when you leave the space.\par
+\pard\qc\par
+\pard Your left hand controls the quality of the note being played. It can control the volume, tremolo, vibrato, pitch-bend, reverb, etc.\par
+\par
+A small LCD screen has a menu which allows you to select the current instrument, the function of the left hand, the scale (or "key") of the right hand, vibrato, tremolo, etc.\par
+\par
+The whole MIDI "Theremin" instrument operates stand-alone with its own speaker and rechargeable battery.\par
+\par
+If you're going to copy my build, you will need an Arduino Nano (\'a31.50), a VS1053 module (\'a34.50), a 1.44" ST7735 LCD display(\'a33.50), two HC-SR04 modules (\'a31 each) and a few resistors. You'll also need some powered speakers and perhaps a lithium cell and a PSU but the details will depend on how you decide to build it. I got all those extras from car-boot sales and charity shops. Plus you'll need the usual electronic workshop paraphernalia.\par
+\par
+\par
+\par
+\ul\b\fs40 Step 1\par
+Controlling the VS1053\ulnone\b0\fs20\par
+\par
+<Miditheremin0.exe> <Miditheremin0.ino> picture of schematic, no sonar or LCD <Miditheremin0.exe screenshot?> \par
+\par
+I chose the VS1053 module shown in the picture. (Note the two SOT223 regulators, the two jack sockets and the position of the connector.)\par
+\par
+https://www.aliexpress.com/item/32641284045.html\par
+or\par
+https://www.aliexpress.com/item/1703202136.html\par
+\par
+I bought it a couple of years ago and it no longer appears to be available on eBay, only on Alibaba. A red PCB version is now available on eBay. It appears to be functionally identical but the pinout is different so you'll need to adjust my schematics and layouts. I haven't tested it.\par
+\par
+The VS1053 is a fine chip but rather complicated. I'm only using the MIDI part of it. It's possible to control the VS1053 over a serial interface but I'm using the SPI bus as it's more convenient with an Arduino Nano. Any byte you send over the SPI bus is treated as a MIDI command.\par
+\par
+You'll find lists of MIDI commands on the web. The VS1053 responds to some but not all of them. The Miditheremin0.exe program shows the ones that I know work.\par
+\par
+You can download the VS1053 data sheet from the web. \par
+http://www.vlsi.fi/fileadmin/datasheets/vs8053.pdf\par
+It's a huge document and is hard going. Section "8.9 Supported MIDI Formats" is almost all it says about MIDI. Section "10.10 Real-Time MIDI" talks about using GPIO0 and GPIO1 to enable MIDI but the board I have didn't require any special enabling. You can also download a list of MIDI messages (not all of which are supported by the VS1053).\par
+https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message\par
+\par
+Wire the VS1053 module to an Arduino Nano as shown and upload the INO file to the Arduino. I used a solderless-breadboard. I don't have a photo of it at this stage but you can see the breadboard with other components in a step below.\par
+\par
+The INO sketch receives a byte from the PC over the serial line and sends the byte to the VS1053. It's a very simple program which allows you to test the VS1053. Connect the output jack socket to headphones or a computer speaker.\par
+\par
+The Windows Miditheremin0.exe program sends commands to the VS1053. Click the "90 note vel" button to play a note. Or you could write your own Windows program. Or use one of the many terminal programs available on the web. \par
+\par
+The VS1053 module has the following pins:\par
+\par
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\fi-294\li720 the SPI bus has the usual MISO, MOSI and SCLK \par
+{\pntext\f3\'B7\tab}if XRST is low, the chip resets\par
+{\pntext\f3\'B7\tab}XDCS doesn't do anything in SPI mode so tie it to XCS\par
+{\pntext\f3\'B7\tab}XCS is Chip Select\par
+{\pntext\f3\'B7\tab}Reading DREQ tells you that the chip is ready for a new command. \par
+\pard\par
+XCS should be set low while you're sending a byte; then high. That way, you're sure you have synchronised the first bit of each byte. Reading DREQ tells you that the chip is ready to receive a new command. \par
+\par
+After the Arduino sends a byte, it must send a dummy byte so as to toggle the clock and allow the VS1053 to send a byte back in response. The SPItransfer() function shows you how.\par
+\par
+The red module available on eBay includes an SD card slot so it has a couple of extra pins. Ignore them.\par
+\par
+Now you're confident you can make the VS1053 work, we'll turn it into more of a musical instrument.\par
+\par
+\par
+\par
+\ul\b\fs40 Step 2\par
+Using the Sonars\ulnone\b0\fs20\par
+\par
+<Miditheremin1.exe> <Miditheremin2.ino> <picture of schematic no LCD yes sonar > <image of breadboard?> <picture of sonar bins>\par
+\par
+Wire the HC-SR04 modules to the Arduino Nano as shown and upload the INO file to the Arduino. \par
+\par
+Notice in the schematic that DC3 - the decoupling capacitor for the HC-SR04 modules - should be soldered close to the HC-SR04 modules. They take quite a current when they're transmitting which DC3 helps supply. \par
+\par
+In this stage of the project, the Windows PC still sends commands to the VS1053 but the VS1053 is also controlled by the HC-SR04 sonar sensors. \par
+\par
+The new commands all start with 0xFF and are interpreted by the Arduino sketch (rather than being sent straight to the VS1053). Non "FF-command" bytes are sent to the VS1053. \par
+\par
+There are commands to change the instrument, change the scale, add vibrato and tremolo, etc. The program can be run in "discrete" mode where there are separate notes (like a piano) or in "continuous" mode where a single note is bent up and down (like a theremin).\par
+\par
+It does pretty well everything the final instrument will do but it's controlled by a PC.\par
+\par
+\f1 The right \f0 HC-SR04 \f1 sonar sensor selects the the pitch of note that is played. \f0 In "discrete" mode the space on the right is divided into "bins". As your hand enters a bin, the note for that bin starts. When you leave the bin, the note might stop (e.g. an organ) or die away naturally (e.g. a piano). As your hand enters a bin, the bin expands slightly so you don't get jitter at its edge.\par
+\par
+\f1 The GetSonar() function returns the time taken until the first echo. It ignores very quick echoes (duration < 10) which the HC-SR04 sometimes reports. If no echo has been received by maxDuration, it returns maxDuration. The duration is not measured in any particular units - it's just a number.\par
+\par
+In Discrete mode, the duration is first filtered to remove occasional dropouts (when no echo is received). The hand is assumed to be present only after 10 samples of maxDuration are received. Then the duration is filtered using a Median filter. Median filters are good at removing "impulsive" noise (i.e. occasional spikes). The filtered duration is used to select a bin.\par
+\par
+In Continuous mode, the duration is again filtered to remove occasional dropouts. Then it is smoothed using an exponential filter. The filtered duration is used to set the frequency of the note using "pitch bend".\par
+\par
+\f0\par
+\par
+\ul\b\fs40 Step 3\par
+Adding a Display\ulnone\b0\fs20\par
+\par
+<Miditheremin2.exe> <Miditheremin2.ino> <image of display> <ST7735 library> <font designer exe> <picture of schematic yes LCD yes sonar .> <picture of breadboard>\par
+\par
+The display is a 1.44" colour TFT LCD screen with a ST7735 controller, 128x128 pixels. There are lots of screens available on eBay, for instance you might prefer to develop your instrument with a larger touch-screen. I'd not used the ST7735 controller and wanted to try it out.\par
+\par
+I got mine from \par
+\par
+https://www.ebay.co.uk/itm/1-44-128x128-65K-SPI-Full-Color-TFT-LCD-Display-Modules-ST7735-OLED-for-Ardu-Y5/352882029385?ssPageName=STRK%3AMEBIDX%3AIT&_trksid=p2060353.m2749.l2649\par
+\par
+The same module is sold widely on eBay - just get one that looks the same as the photo.\par
+\par
+The LCD has the following pins:\par
+\par
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\fi-152\li720 GND\tab ground\par
+{\pntext\f3\'B7\tab}VCC\tab 3.3V\par
+{\pntext\f3\'B7\tab}SCL\tab SPI bus SCLK\par
+{\pntext\f3\'B7\tab}SDA\tab SPI bus MOSI of Arduino\par
+{\pntext\f3\'B7\tab}RES\tab reset\par
+{\pntext\f3\'B7\tab}DC\tab data/command\par
+{\pntext\f3\'B7\tab}CS\tab chip select\par
+{\pntext\f3\'B7\tab}BL\tab back light\par
+\pard\par
+The module runs on 3.3V so you shouldn't connect it directly to your 5V Arduino. I've used 1k resistors to drop the voltage. That's not good practice (in general, one should use a potential-divider or a voltage-dropper chip) but works perfectly well in this circuit. I was being lazy.\par
+\par
+The display is powered by the 3.3V provided by the Arduino. The Arduino regulator seems happy enough.\par
+\par
+Adafruit very kindly publish an ST7735 library and several other libraries are available in Github and elsewhere. I tried a few and didn't like any of them. Some simply didn't work and all were huge. You write an Arduino sketch that draws a line and some text and you find your memory if 75% full. So I wrote my own library.\par
+\par
+The SimpleST7735 library can be downloaded here. It has a standard set of drawing commands very similar to all such libraries. \par
+\par
+I found that the other libraries I tried were rather bloated. A simple "Hello Word" graphics program which drew a single line would fill 70% of the Arduino's code memory. Some of the "fast" libraries you can download use special timing loops and are upset when other, maybe slower, devices are used on the same bus. SimpleST7735 is written in C rather than assembler so isn't quite as fast as it could be but is much more portable and it shares the SPI bus politely with other devices. A Windows program can be downloaded which allows you to make your own fonts and icons.\par
+\par
+https://www.displayfuture.com/Display/datasheet/controller/ST7735.pdf\par
+You can download the ST7735 data sheet from the web. You talk to it by \par
+\par
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\fi-152\li720 set CS low\par
+{\pntext\f3\'B7\tab}set DC low\par
+{\pntext\f3\'B7\tab}send a command byte\par
+{\pntext\f3\'B7\tab}set DC high\par
+{\pntext\f3\'B7\tab}send zero or more data bytes\par
+{\pntext\f3\'B7\tab}set CS high\par
+\pard\par
+You can see how I do it in the spiSend_TFT_CW() function in the library. The data bytes might be a whole row of pixels or a setting for a control register.\par
+\par
+The ST7735Begin() function in the library shows you the initialisation command set I've chosen. You might want to change the commands if you choose a different ST7735 display (e.g. with more pixels) or want a different orientation. I hope my code is easy for you to change if you need to.\par
+\par
+\par
+\par
+\ul\b\fs40 Step 4\par
+The Menu system\ulnone\b0\fs20\par
+\par
+<pictures of menu >\par
+<picture of keyboard display>\par
+<Miditheremin3.ino> \par
+\par
+This Arduino sketch adds a menuing system to the MIDI Theremin and controls the final complete instrument.\par
+\par
+The MIDI Theremin is usually running in "Play" mode. Your right hand selects which the note and your left hand controls the quality of the note. The LCD displays a piano keyboard with the current note highlighted.\par
+\par
+If you hold down the control button for one second, the program goes into "Menu" mode.\par
+\par
+In "Menu" mode, the menu is displayed. The menu has a tree structure with major-items and sub-items. The current menu item is highlighted. \par
+\par
+You move the selection up/down via the left-hand sonar. The tree for a major-item is only expanded when major-item is selected.\par
+\par
+Having chosen a sub-menu, when you click the button, the value of that item is highlighted. The left hand now increments or decrements the value. Click the button again to go back to selecting sub menus.\par
+\par
+\par
+In \b Discrete mode\b0 , the menu tree is\par
+\par
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\fi-152\li720 Instrument\par
+{\pntext\f3\'B7\tab}    0: Grand Piano\par
+{\pntext\f3\'B7\tab}Right Hand\par
+{\pntext\f3\'B7\tab}    Mode: discrete\par
+{\pntext\f3\'B7\tab}Left Hand\par
+{\pntext\f3\'B7\tab}    Mode: Vibrato\par
+{\pntext\f3\'B7\tab}    Max Depth: 10\par
+{\pntext\f3\'B7\tab}Scale\par
+{\pntext\f3\'B7\tab}    Scale: major Heptatonic\par
+{\pntext\f3\'B7\tab}    Octaves: 2\par
+{\pntext\f3\'B7\tab}    Lowest note: 60 C\par
+{\pntext\f3\'B7\tab}Chord\par
+{\pntext\f3\'B7\tab}    Chord: Major triad\par
+{\pntext\f3\'B7\tab}    Inversion: 0\par
+{\pntext\f3\'B7\tab}    Polyphony: 1\par
+{\pntext\f3\'B7\tab}Tremolo\par
+{\pntext\f3\'B7\tab}    Size: 20\par
+{\pntext\f3\'B7\tab}    Period: 10\par
+{\pntext\f3\'B7\tab}Vibrato\par
+{\pntext\f3\'B7\tab}    Size: 20\par
+{\pntext\f3\'B7\tab}    Period 10\par
+{\pntext\f3\'B7\tab}Play\par
+{\pntext\f3\'B7\tab}    Swap Hands: normal\par
+{\pntext\f3\'B7\tab}    Play\par
+\pard\par
+The \b Instrument\b0  can be "Grand Piano", "Church Organ", "Violin", etc. There are 127 instruments in the VS1053 many of which sound identical and many are silly like "gunshot".\par
+\par
+The \b Right Hand\b0  can be "Discrete" or "Continuous". See below for the "continuous" menu.\par
+\par
+The \b Left Hand \b0 can control "Volume", "Tremolo", "Vibrato", "PitchBendUp", "PitchBendDown", "Reverb", "Polyphony" or "ChordSize". \par
+\par
+"Volume" is obvious. "Tremolo" is a fast variation in volume; the left hand controls the size of the variation; the period is set by a different menu item. "Vibrato" is a fast variation in pitch; the left hand controls the size of the variation; the period is set by a different menu item. "PitchBendUp" and "PitchBendDown" alter the pitch of the note being played; the left hand controls the size of the bend. "Reverb" is rather unimpressive in the VS1053; the left hand controls the size of the reverb. "Polyphony" controls how many notes are playing at once up to the maximum set by the Polyphony menu (see below). "ChordSize" means the left hand controls how many notes of a chord (see below) are played.\par
+\par
+In music, a "scale" or "key" is the subset of notes that you're using. For instance, if you restricted yourself to the Heptatonic scale of C Major, you'd be playing just the white notes of the piano. If you chose C# Major Pentatonic then you'd just be using the black notes (e.g. for Scottish folk tunes).\par
+\par
+The \b Scale\b0  menu chooses which notes the right hand space corresponds with and how many octaves the right hand space covers. So if you choose 1 octave of E Major then the right hand space is divided into 8 bins with E at the lowest pitch and E one octave above at the highest pitch.\par
+\par
+The \b Scale\b0  menu allows you to choose a lot of unusual "non-Western music" scales but it assumes all the notes are from the even-tempered keyboard - that's how MIDI works, you can't easily specify the frequency of a note. So if you wanted, say, the Arabic quarter tone scale, you'd be in trouble.\par
+\par
+The \b Octaves\b0  sub-menu allows you to choose how many octaves of the scale you want. And the \b Lowest note\b0  says where the scale starts.\par
+\par
+Normally when a note is played, only that note is sounded. The \b Chord\b0  menu allows you to play several notes at once. A Major Triad chord means 'play the chosen note plus the note four semitones higher, plus the note seven semitones higher'.\par
+\par
+The \b Inversion\b0  sub-menu gives you chord inversions. That means it moves some of the notes of the chord to one octave below. The First Inversion moves all the "extra" notes down an octave, the second Inversion moves one fewer of the extra notes down, and so on.\par
+\par
+The \b Polyphony\b0  sub-menu says how many notes are playing at once; if polyphony is 1 then when one note starts, the previous one is stopped; if polyphony is larger then several notes can overlap - try it with the church organ. \par
+\par
+The \b Tremolo\b0  menu specifies the depth of any tremolo and the period of the tremolo cycle. A period of "100" means one cycle per second. If the left hand is controlling tremolo then the Size sub-menu is hidden.\par
+\par
+The \b Vibrato\b0  menu specifies the size of any vibrato and the period of the vibrato cycle. If the left hand is controlling vibrato then the Size sub-menu is hidden.\par
+\par
+The \b Play\b0  menu allows you to return to Playing mode. Select the \b Play\b0  sub-menu and click the button. The menu disappears and a keyboard appears. The \b Swap Hands\b0  sub-menu allows you to swap the functions of the left and right hands - perhaps you prefer it that way or perhaps you want the speakers to face the audience. \par
+\par
+The program allows you to save and load up to 5 different "Setups". A Setup stores all the values you can set in the menu. Setups are saved in the EEPROM.\par
+\par
+In Play mode, clicking the button changes to the next setup. If you hold down the button for one second, the menu appears. Pressing the foot-pedal also changes to the next setup; the foot-pedal never selects the menu. \par
+\par
+In Menu mode, when you change to a new Setup, the current setup is saved and the new one is loaded. The current setup is also saved when you select Play mode.\par
+\par
+\par
+In \b Continuous mode\b0 , the menu tree is\par
+\par
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\fi-152\li720 Instrument\par
+{\pntext\f3\'B7\tab}    0: Grand Piano\par
+{\pntext\f3\'B7\tab}Right Hand\par
+{\pntext\f3\'B7\tab}    Mode: continuous\par
+{\pntext\f3\'B7\tab}Range\par
+{\pntext\f3\'B7\tab}    Num semitones: 12\par
+{\pntext\f3\'B7\tab}    Middle note: 60 C\par
+{\pntext\f3\'B7\tab}Left Hand\par
+{\pntext\f3\'B7\tab}    Mode: tremolo\par
+{\pntext\f3\'B7\tab}    Max Depth: 10\par
+{\pntext\f3\'B7\tab}Tremolo\par
+{\pntext\f3\'B7\tab}    Size: 20\par
+{\pntext\f3\'B7\tab}    Period: 10\par
+{\pntext\f3\'B7\tab}Vibrato\par
+{\pntext\f3\'B7\tab}    Size: 20\par
+{\pntext\f3\'B7\tab}    Period 10\par
+{\pntext\f3\'B7\tab}Play\par
+{\pntext\f3\'B7\tab}    Swap Hands: normal\par
+{\pntext\f3\'B7\tab}    Play\par
+\pard\par
+Most menu items are the same but there are a few changes:\par
+\par
+The \b Range\b0  menu chooses what range of frequencies the right-hand specifies: the number of semitones covered and the middle note.\par
+\par
+The \b Left Hand \b0 can only control "Volume", "Tremolo" and "Vibrato".\par
+\par
+\par
+\par
+\par
+\ul\b\fs40 Step 5\par
+Soldering it Together\ulnone\b0\fs20\par
+\par
+< P1190258a.jpg  pictures of pcb - open>\par
+< pictures of pcb - folded up>\par
+< my pcb layout>\par
+<"3D" view of boards.>\par
+\par
+I built the circuit on stripboard. I can't see the point of getting a PCB made for a one-off with just 4 resistors but I realise some people don't like stripboard.\par
+\par
+My stripboard layout is shown above. The four boards - Arduino, VS1053, display and stripboard form a sandwich. In the layout, the outline of the Arduino is yellow, the VS1053 is blue, the display is purple and the stripboard is green.\par
+\par
+The cyan lines are the copper strips of the stripboard - make sure you put breaks in where needed. The red lines are links on the component side of the stripboard or wires going elsewhere.\par
+\par
+I used extra-long pins for the VS1053 board because it stands above the Arduino. Pins at the far corners of the display and VS1053 boards help stabilise them. The mounting holes of the modules are plated so you can solder them. Make sure yours aren't connected to ground - the mounting holes of my modules aren't.\par
+\par
+If you have a different VS1053 module or a different display, you can change the Arduino pins:\par
+\par
+\pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\fi-152\li720 D2 to D10 and A0 to A5 can be used in any order you like; update the pin numbers near the start of the INO sketch\par
+{\pntext\f3\'B7\tab}D11, D12, D13 are dedicated to SPI and cannot be re-assigned\par
+{\pntext\f3\'B7\tab}D0, D1 are dedicated to serial I/O\par
+{\pntext\f3\'B7\tab}A6, A7 cannot be used as digital pins\par
+\pard\par
+The HC-SR04 modules are at 90\f2\'b0 to each other connected by a piece of stripboard. The pushbutton is between them. No doubt you'll have your own preferred design.\f0\par
+\par
+\par
+\par
+\ul\b\fs40 Step 6\par
+Adding a PSU\ulnone\b0\fs20\par
+\par
+<circuit for batt and charger>\par
+< picture of batt and charger>\par
+\par
+I measured the total current of the Arduino, VS1053 and display as 79mA. According to the data sheets, the Arduino is 20mA, the display is 25mA, the VS1053 is 11mA and the HC-SR04 are 15mA each when "working" - so 80mA seems about right.\par
+\par
+The display takes 25mA and is powered from the 3V3 output of the Arduino which is rated to give 50mA. So the circuit shouldn't be stressing the Arduino's 3V3 regulator.\par
+\par
+Can we power the circuit through the Arduino's Vin pin? I cannot find the answer to that anywhere on the web. It's not in the Arduino documentation. The on-board 5V regulator will dissipate (Vin-5)*80 mW. What is its maximum dissipation? It seems that nobody really knows. According to its datasheet, the NCP1117 regulator in a SOT-223 package with a minimum copper pad can dissipate 650mW. So for an 80mA current, \par
+\par
+\tab Vin\tab Power\par
+\tab 8V\tab 240mW\par
+\tab 9\tab 320\par
+\tab 10\tab 400\par
+\tab 11\tab 480\par
+\tab 12\tab 560\par
+\tab 13\tab 640\par
+\tab 14\tab 720\par
+\par
+To be safe, I suppose we shouldn't exceed 9V on Vin. \par
+\par
+An external 5V PSU would be far safer but I used the Arduino's regulator and it's fine.\par
+\par
+To power the circuit, I chose a module that combines a LI-ion charger and a boost PSU. They are widely available on eBay\par
+\par
+https://www.ebay.co.uk/itm/USB-18650-Lithium-Li-ion-Battery-Charger-Module-Boost-3-7V-to-5V-9V-12V-New/123523872068?hash=item1cc298b544:g:OuwAAOSwUMBcBPdd\par
+\par
+or search for "Li Charger Boost".\par
+\par
+The charger uses a TC4056 chip which has a complicated constant current and constant voltage algorithm. When you remove the USB power input, it enters standby mode with a battery drain of less than 2uA. The TC4056 has an input for temperature sensing but it's not available on the module board (the pin is grounded).\par
+\par
+The boost circuit allegedly is 87-91% efficient over the normal battery voltage range with an output current of 50-300mA. (I didn't measure it myself.) That's pretty good.\par
+\par
+However, its "standby" current when you remove the load is 0.3mA which is poor. A 300mAH cell would be drained in 6 weeks. Perhaps it would be drained so far its voltage would drop to a damaging level.\par
+\par
+There is a single track which connects the battery to the boost PSU. You can cut the track easily (see photo). Solder a wire onto the large resistor at the top so that you can bridge the cut via a switch.\par
+\par
+The current drawn is now 0.7uA with the board I tested. So the cell will last 50 years - well, of course not, the self-discharge of a Li-ion cell is around 3% per month. 3% per month for a 300mAH cell is a current of 13uA. Compare that with the 300uA the boost circuit takes. I reckon it's worth switching off the boost circuit.\par
+\par
+You should not switch on the load when the cell is charging. The current drawn by the load will confuse the charging algorithm.\par
+\par
+So you need a 2-pole changeover switch (e.g. a slide switch) which is either in the "On" or the "Charge" position.\par
+\par
+You could ignore the built-in USB socket and solder separate wires to the switch and your own USB socket.\par
+\par
+Or you could keep the built-in socket and cut the connection between the socket and the chip. The diagram above shows where to cut.\par
+\par
+Connect the 5V output of the boost PSU to the 5V pin of the Arduino. People say "don't do that - you're by-passing the Arduino's protection diode". But the Nano doesn't have a pin connected to the USB side of the diode. Just connect to the 5V pin. What's the worst that could happen? You lose a Nano that cost under \'a33.\par
+\par
+The PSU circuit must also power the amplifier for the speakers. \par
+\par
+\par
+\par
+\ul\b\fs40 Step 7\par
+Adding Speakers\ulnone\b0\fs20\par
+\par
+<blue speakers> < black speakers> <putty speakers> <pile of speakers>\par
+\par
+I wanted the MIDI Theremin to be portable. It should include its own speakers and amplifier.\par
+\par
+You could build your own amplifier or buy an amplifier module, then buy speakers and put them in a case. But what's the point? In my techno-midden I've got half a dozen powered speakers that I've bought from charity shops and car-boot sales all for under \'a31 each. \par
+\par
+The pale blue speakers used only 30mA at 5V but have a poor bass response. The black radio is a nice shape - I can imagine fitting the HC-SR04 modules at the corners and the display on the top surface. The gray "flat panel" ones are powered from a USB socket which is ideal.\par
+\par
+With a little searching, you should find powered speakers that already have nice case. Make sure that they will run at the voltage of your power supply. If it's powered by four AA cells it will probably work OK at 5V.\par
+\par
+But I dug further into the techno-midden and found a very nice docking station I got at an "everything for \'a30.50" stall. It had lost its charger and IR remote but works well.\par
+\par
+If you're determined to build your own powered speakers, here's a good Instructable:\par
+\par
+https://www.instructables.com/id/PAM8403-6W-STEREO-AMPLIFIER-TUTORIAL/\par
+\par
+or search Instructables for PAM8403 or Amplifier.\par
+\par
+\par
+\par
+\ul\b\fs40 Step 8\par
+Docking Station\ulnone\b0\fs20\par
+\par
+<photo docking station built>\par
+<photo docking station open - inside>\par
+<photo docking station open - outside with my pcb>\par
+<photo where to attach psu wires>\par
+\par
+This is a very nice Logitech portable docking station. It's unlikely that you'll get one the same but the construction principles will be the similar.\par
+\par
+The docking station includes its own rechargeable Li-ion cell and boost PSU. (If yours doesn't then build the PSU described above and skip the next few paragraphs.)\par
+\par
+If your amp has a Li-ion cell then it probably has a boost PSU. (The voltage of single Li-ion cell is inconveniently low so needs boosting.)\par
+\par
+First, find the connections for the power to the amplifier. The PSU will have big smoothing capacitors - see the photo of the junk PCB. Measure the voltage at their solder pads on the underside. The negative pad should be the "ground" pad of the circuit. If the pcb has been flood-filled that will be ground. Or ground might be a thick track that goes to many places on the board.\par
+\par
+There might be big capacitors on the output stage of the amp - that's the old-fashioned way of doing it. Measure the voltage across them while it's working. It will probably vary according to the music and might average half the voltage of the power-supply capacitors. Those are the wrong capacitors - you want the ones in the PSU.\par
+\par
+It's very unlikely that the board will have both  positive and negative power (big stereo power amps do but I've never seen a lightweight one like that). Make sure you really have chosen ground and positive power.\par
+\par
+The Logitech docking station I'm using has complicated digital circuitry as well as the analogue amp. If yours is like that, it will have smoothing capacitors for 5V or 3.3V plus maybe 9V for the amp. Measure the voltages across all the big capacitors and choose the largest voltage.\par
+\par
+Make sure the voltage of the power connection you've chose depends on the on/off switch. (When you turn off the switch, the voltage may take a while to drop as the capacitor empties.)\par
+\par
+Solder wires to whatever you've chosen as your power source. The Logitech docking station produces around 9V which will connect nicely to the Vin pin of the Arduino. \par
+\par
+Your powered speakers or docking station should have a 3.5mm jack for audio input. One of the solder-joints will be ground - probably the one nearest the edge of the board. Use an ohm-meter to check that it connects to what you think is the ground. With some audio inputs the "shield" of the jack isn't connected directly to ground. It's floating. So if none of the jack pins are ground, don't worry for the moment. (The "shield" of the jack on the VS1053 module is also floating.)\par
+\par
+Use a meter to check that the jack "ground" pin is at the same voltage as the power supply ground.\par
+\par
+The Logitech docking station was weird. If I connected the "ground" of the Logitech jack socket to the "ground" of the VS1053 board (by using an audio cable, it worked fine but the current to my Theremin system went up from 80mA to over 200mA. So I made sure I didn't connect those two "grounds". it works well but I've no idea what was going on.\par
+\par
+\par
+\par
+\ul\b\fs40 Step 9\par
+Making a Case\ulnone\b0\fs20\par
+\par
+<photos of tinplate>\par
+<photos of completed circuits>\par
+<photos of completed unit>\par
+\par
+\par
+What case you make will depend on the materials you have to hand, what you enjoy working with and the powered speakers you chose. Whatever you make should ensure that the sonars point away from each other and up at 45\f2\'b0. There will be the display screen and the pushbutton. \f0\par
+\par
+If you've looked at my other Instuctables, you'll know that I'm a big fan of tinplate. It can be bent to shape, soft-soldered and painted. The photos show how I arranged things. \par
+\par
+The top triangle is tinplate bent, soldered, filled, smoothed and painted. The pcbs are hot-glued in the triangle and have small slivers of wood to act as spacers.\par
+\par
+The "front panel" is 1mm polystyrene sheet. Standoffs are made from more polystyrene sheet and self-tapping screws hold the stripboard in place. Wooden supports are hot-glued into the cavity in the front of the docking station and the pcbs are screwed onto them with long self-tapping screws.\par
+\par
+I guess I could have 3D printed something but I prefer the old-school methods where I can adjust things as I go along. Making things is a voyage of discovery rather than "engineering".\par
+\par
+\par
+\ul\b\fs40 Step 10\par
+Future Fevelopment\ulnone\b0\fs20\par
+\par
+How could you develop the instrument further? You could change the user-interface. You could replace the button with an IR distance sensor so you don't have to touch the instrument at all. Or maybe use a touch screen rather than a button and the left-hand to control the menu.\par
+\par
+The Scale menu allows you to choose "non-Western music" scales but it assumes all the notes are from the even-tempered keyboard - that's how MIDI works The Arabic quarter tone scale has notes that are not on the even-tempered scale. Other scales are not related to an even-tempered keyboard in any way. It may be possible to use pitch-bend to produce such notes. You'd need some way for the menu to specify the frequency of each note. I think pitch bend may apply to all the notes in the channel. I currently only use one channel - channel 0. So if it's polyphonic or has chords, you'll have to play each not in a different channel.\par
+\par
+The instrument could become a drum synthesiser. The right hand could determines the pitch of a Melodic Tom while the left sonar is replaced with a piezo sensor that you strike to sound the drum.\par
+\par
+The two hands could control two different instruments.\par
+\par
+The left hand could choose an instrument.\par
+\par
+About half way through this project, I discovered the Altura MkII Theremin MIDI Controller by Zeppelin Design Labs. It looks like a fine instrument. \par
+\par
+https://zeppelindesignlabs.com/product/altura-mkii-theremin-midi-controller/\par
+\par
+They have a couple of videos which are very worth watching:\par
+\par
+https://www.youtube.com/watch?v=PjeAGq_f3XM\par
+https://www.youtube.com/watch?v=b_09LZ2nyss\par
+\par
+(I stole the word "bins" from Altura and the idea that a bin expands when you enter it to help you stay in it.)\par
+\par
+My MIDI Theremin differs from the Altura in a few ways. Mine produces its own sound with its built-in MIDI synth, amp, etc.; the Altura sends messages to a external synth. You might well prefer their way of doing it. Mine has a TFT screen rather than a 7-segment display - that's definitely better but you might think a bigger screen would be an improvement. Mine uses menus to set up the parameters while theirs uses knobs. Menus are required because mine controls both the input device (the sonars) and the synth; the Altura needs fewer controls. Maybe knobs are better during a live performance. Maybe mine should have knobs.\par
+\par
+The Altura has an "Articulation" control which sets how fast notes can be played. I haven't included that in my software - maybe it should be there. The Altura has an Arpeggiator (step sequencer). That's a good idea; mine has chords which aren't quite the same thing.\par
+\par
+I hope you enjoy building and using a MIDI-Theremin. Let me know if you find any mistakes in my description or if you can think of any improvements.\par
+\par
+\par
+\par
+}
+ 
