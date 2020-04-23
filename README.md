@@ -1,6 +1,8 @@
 # MIDI-Theremin
 MIDI-Theremin instructables project
 
+https://www.instructables.com/id/MIDI-Sonar-Theremin/
+
 This is a musical instrument which uses two sonar distance sensors to control the pitch and quality of the notes. It's not really a Theremin of course but "Theremin" has become the generic term for instruments played by waving your hands around.
 
 It has a built-in MIDI synthesiser, amplifier and speakers. The musical notes are produced by a MIDI chip - the VS1053 - which has 127 voices (i.e. allegedly-different instruments). It has a high degree of polyphony (up to 64) so it can play single notes or chords.
