@@ -156,7 +156,7 @@ This Arduino sketch adds a menuing system to the MIDI Theremin and controls the 
 \par
 The MIDI Theremin is usually running in "Play" mode. Your right hand selects which the note and your left hand controls the quality of the note. The LCD displays a piano keyboard with the current note highlighted.\par
 \par
-If you hold down the control button for one second, the program goes into "Menu" mode.\par
+If you hold down the control button for one second, the program goes into "Menu" mode. In Menu mode, if you hold down the control button for one second, the program returns to "Play" mode.\par
 \par
 In "Menu" mode, the menu is displayed. The menu has a tree structure with major-items and sub-items. The current menu item is highlighted. \par
 \par
@@ -169,6 +169,7 @@ In \b Discrete mode\b0 , the menu tree is\par
 \par
 \pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\fi-152\li720 Instrument\par
 {\pntext\f3\'B7\tab}    0: Grand Piano\par
+{\pntext\f3\'B7\tab}    Swap Hands: normal\par
 {\pntext\f3\'B7\tab}Right Hand\par
 {\pntext\f3\'B7\tab}    Mode: discrete\par
 {\pntext\f3\'B7\tab}Left Hand\par
@@ -183,16 +184,13 @@ In \b Discrete mode\b0 , the menu tree is\par
 {\pntext\f3\'B7\tab}    Inversion: 0\par
 {\pntext\f3\'B7\tab}    Polyphony: 1\par
 {\pntext\f3\'B7\tab}Tremolo\par
-{\pntext\f3\'B7\tab}    Size: 20\par
-{\pntext\f3\'B7\tab}    Period: 10\par
+{\pntext\f3\'B7\tab}    Size: 0\par
+{\pntext\f3\'B7\tab}    Period: 20\par
 {\pntext\f3\'B7\tab}Vibrato\par
-{\pntext\f3\'B7\tab}    Size: 20\par
-{\pntext\f3\'B7\tab}    Period 10\par
-{\pntext\f3\'B7\tab}Play\par
-{\pntext\f3\'B7\tab}    Swap Hands: normal\par
-{\pntext\f3\'B7\tab}    Play\par
+{\pntext\f3\'B7\tab}    Size: 10\par
+{\pntext\f3\'B7\tab}    Period 20\par
 \pard\par
-The \b Instrument\b0  can be "Grand Piano", "Church Organ", "Violin", etc. There are 127 instruments in the VS1053 many of which sound identical and many are silly like "gunshot".\par
+The \b Instrument\b0  can be "Grand Piano", "Church Organ", "Violin", etc. There are 127 instruments in the VS1053 many of which sound identical and many are silly like "gunshot". The \b Swap Hands\b0  sub-menu allows you to swap the functions of the left and right hands - perhaps you prefer it that way or perhaps you want the speakers to face the audience. \par
 \par
 The \b Right Hand\b0  can be "Discrete" or "Continuous". See below for the "continuous" menu.\par
 \par
@@ -218,19 +216,18 @@ The \b Tremolo\b0  menu specifies the depth of any tremolo and the period of the
 \par
 The \b Vibrato\b0  menu specifies the size of any vibrato and the period of the vibrato cycle. If the left hand is controlling vibrato then the Size sub-menu is hidden.\par
 \par
-The \b Play\b0  menu allows you to return to Playing mode. Select the \b Play\b0  sub-menu and click the button. The menu disappears and a keyboard appears. The \b Swap Hands\b0  sub-menu allows you to swap the functions of the left and right hands - perhaps you prefer it that way or perhaps you want the speakers to face the audience. \par
 \par
-The program allows you to save and load up to 5 different "Setups". A Setup stores all the values you can set in the menu. Setups are saved in the EEPROM.\par
+The program allows you to save and load up to 5 different "\b Setups\b0 ". A Setup stores all the values you can set in the menu. When you exit Menu mode, the current setup is saved. Setups are saved to the EEPROM.\par
 \par
 In Play mode, clicking the button changes to the next setup. If you hold down the button for one second, the menu appears. Pressing the foot-pedal also changes to the next setup; the foot-pedal never selects the menu. \par
 \par
-In Menu mode, when you change to a new Setup, the current setup is saved and the new one is loaded. The current setup is also saved when you select Play mode.\par
 \par
 \par
 In \b Continuous mode\b0 , the menu tree is\par
 \par
 \pard{\pntext\f3\'B7\tab}{\*\pn\pnlvlblt\pnf3\pnindent0{\pntxtb\'B7}}\fi-152\li720 Instrument\par
 {\pntext\f3\'B7\tab}    0: Grand Piano\par
+{\pntext\f3\'B7\tab}    Swap Hands: normal\par
 {\pntext\f3\'B7\tab}Right Hand\par
 {\pntext\f3\'B7\tab}    Mode: continuous\par
 {\pntext\f3\'B7\tab}Range\par
@@ -240,14 +237,11 @@ In \b Continuous mode\b0 , the menu tree is\par
 {\pntext\f3\'B7\tab}    Mode: tremolo\par
 {\pntext\f3\'B7\tab}    Max Depth: 10\par
 {\pntext\f3\'B7\tab}Tremolo\par
-{\pntext\f3\'B7\tab}    Size: 20\par
-{\pntext\f3\'B7\tab}    Period: 10\par
+{\pntext\f3\'B7\tab}    Size: 0\par
+{\pntext\f3\'B7\tab}    Period: 20\par
 {\pntext\f3\'B7\tab}Vibrato\par
-{\pntext\f3\'B7\tab}    Size: 20\par
-{\pntext\f3\'B7\tab}    Period 10\par
-{\pntext\f3\'B7\tab}Play\par
-{\pntext\f3\'B7\tab}    Swap Hands: normal\par
-{\pntext\f3\'B7\tab}    Play\par
+{\pntext\f3\'B7\tab}    Size: 10\par
+{\pntext\f3\'B7\tab}    Period 20\par
 \pard\par
 Most menu items are the same but there are a few changes:\par
 \par
